@@ -87,3 +87,8 @@ rownames(compare) <- c("Actual","Predict")
 (test.actual/test.predict) - 1 #calculating the magnitude of difference from the transaction sum angle
 # [1] 0.1476213
 
+sum(cbs$x.star == cbs$xstar.predict) / nrow(CBS2) 
+# [1] 0.6398388
+# 63% of the predicted purchase frequency for a certain customer exactly matches with the actual value
+
+
