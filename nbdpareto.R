@@ -91,4 +91,10 @@ sum(cbs$x.star == cbs$xstar.predict) / nrow(CBS2)
 # [1] 0.6398388
 # 63% of the predicted purchase frequency for a certain customer exactly matches with the actual value
 
+transaction_plot <- pnbd.PlotFreqVsConditionalExpectedFrequency(params.pnbd, T.star = 39,cbs,cbs$x.star, censor = 7) #scatterplot of the # of transactions during training period and test period comparison between Actual and Model
+frequency_plot <- pnbd.PlotFrequencyInCalibration(params.pnbd, cbs, censor = 7)
 
+## PROBABILITY OF CUSTOMERS BEING RETAINED DURING THE TEST / HOLDOUT PERIOD
+
+cbs$prob_alive <- pnbd.PAlive(params.pnbd, cbs$x, cbs$t.x, cbs$T.cal)
+hist(CBS2$prob_alive,xlab="Probability of Being Retained")
