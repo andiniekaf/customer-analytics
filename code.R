@@ -6,6 +6,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(BTYDplus)
+library(e1071)
 
 ## LOADING THE DATA
 cdnow <- read.table("C:/Users/Andini Eka F/Documents/R/Business Analytics EDX Course/CDNOW_master.txt",header=FALSE)
@@ -98,3 +99,43 @@ frequency_plot <- pnbd.PlotFrequencyInCalibration(params.pnbd, cbs, censor = 7)
 
 cbs$prob_alive <- pnbd.PAlive(params.pnbd, cbs$x, cbs$t.x, cbs$T.cal)
 hist(CBS2$prob_alive,xlab="Probability of Being Retained")
+
+## MODELING USING SUPPORT VECTOR REGRESSION (SVR)
+
+# Data Preparation
+cdnow_calib <- cdnow[cdnow$date < "1997-09-30",]
+cdnow_holdout <- cdnow[cdnow$date >= "1997-09-30"]
+
+cdnow_calib_r <- reshape(cdnow_calib,idvar="cust",timevar="date",direction="wide")
+cdnow_calib_r[is.na(cdnow_calib_r)] <- 0
+cdnow_calib_r$spend_calib <- rowSums(cdnow_calib_r[,-1])
+cbs$spend_calib <- cdnow_calib_r$spend_calib 
+
+cdnow_holdout_r <- reshape(cdnow_holdout,idvar="cust",timevar="date",direction="wide")
+cdnow_holdout_r[is.na(cdnow_holdout_r)] <- 0
+cdnow_holdout_r$spend_holdout <- rowSums(cdnow_holdout_r[,-1])
+cdnow_holdout_r_spend <- cdnow_holdout_r[,-(2:275)]
+cbs <- merge(cbs,cdnow_holdout_r_spend,by="cust",all=TRUE)
+cbs[is.na(cbs)] <- 0
+
+# Data Normalization
+# Min-Max Normalization
+
+normalize <- function(x) {
+           return ((x - min(x)) / (max(x) - min(x)))
+  }
+
+cbs_norm <- as.data.frame(lapply(cbs[c("t.x","spend_calib")], normalize))
+cbs$norm_tx <- cbs_norm$t.x
+cbs$norm_spend_calib <- cbs_norm$spend_calib
+
+cbs_calib <- cbs
+cbs_calib$spend_holdout <- NULL
+cbs_calib$x.star <- NULL
+
+svm_model <- svm(x ~ norm_tx + norm_spend_calib, cbs_calib, kernel="radial")
+predict_x <- data.frame(predict(svm, cbs_calib))
+names(predict_x) <- c("predict_x")
+
+cbs_calib$predict_x <- predict_x$predict_x
+
